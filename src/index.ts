@@ -125,7 +125,8 @@ app.get("/api/v1/content",authMiddleware,async (req,res)=>{
 app.delete("/api/v1/content/:id",authMiddleware,async(req,res)=>{
     const contentId=req.params.id;
     const deletedContent= await ContentModel.findOneAndDelete({
-        _id:contentId
+        _id:contentId,
+        userId:req.userId
     })
     if(!deletedContent){
         return res.status(400).json({
