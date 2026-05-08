@@ -17,6 +17,7 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const db_1 = require("./db");
 const config_1 = require("./config");
 const authMiddleware_1 = require("./middlewares/authMiddleware");
+const utils_1 = require("./utils");
 const app = (0, express_1.default)();
 app.use(express_1.default.json()); //step 3.1   remeber to add this, cause we are expecting the body to be json
 //step 0 : creating the skeletons
@@ -109,7 +110,8 @@ app.get("/api/v1/content", authMiddleware_1.authMiddleware, (req, res) => __awai
 app.delete("/api/v1/content/:id", authMiddleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const contentId = req.params.id;
     const deletedContent = yield db_1.ContentModel.findOneAndDelete({
-        _id: contentId
+        _id: contentId,
+        userId: req.userId
     });
     if (!deletedContent) {
         return res.status(400).json({
@@ -120,10 +122,62 @@ app.delete("/api/v1/content/:id", authMiddleware_1.authMiddleware, (req, res) =>
         msg: "Content deleted"
     });
 }));
-app.post("/api/v1/brain/share", authMiddleware_1.authMiddleware, (req, res) => {
-});
-app.post("/api/v1/brain/:shareLink", authMiddleware_1.authMiddleware, (req, res) => {
-});
+app.post("/api/v1/brain/share", authMiddleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const share = req.body.share;
+    const hash = (0, utils_1.random)(10);
+    if (share) {
+        const existingLink = yield db_1.LinkModel.findOne({
+            userId: req.userId,
+        });
+        if (existingLink) {
+            return res.status(300).json({
+                msg: existingLink.hash
+            });
+        }
+        yield db_1.LinkModel.create({
+            userId: req.userId,
+            hash: hash
+        });
+    }
+    else {
+        yield db_1.LinkModel.deleteOne({
+            userId: req.userId
+        });
+        return res.json({
+            msg: "Link no longer exists"
+        });
+    }
+    res.json({
+        msg: "Sharable Link updated succesfully",
+        hash: hash
+    });
+}));
+app.get("/api/v1/brain/:shareLink", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const hash = req.params.shareLink;
+    const Link = yield db_1.LinkModel.findOne({
+        hash: hash
+    });
+    if (!Link) {
+        return res.status(402).json({
+            msg: "the sharable hash doesnt exist now"
+        });
+    }
+    const linkContent = yield db_1.ContentModel.find({
+        userId: Link.userId
+    });
+    const user = yield db_1.UserModel.findOne({
+        _id: Link.userId
+    });
+    if (!user) {
+        return res.status(412).json({
+            msg: "this ideally shouldnt happen, but it did?"
+        });
+    }
+    res.status(200).json({
+        username: user.username,
+        content: linkContent
+    });
+}));
 app.listen(3000, () => {
     console.log("server up on port 3000");
 });

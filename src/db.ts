@@ -2,6 +2,7 @@
 // schema and models::
 // how my data is gonna look like in the database:
 import mongoose,{model,Schema, Types} from "mongoose"
+import { ref } from "node:process";
 
 mongoose.connect("mongodb+srv://rishishukla17122003:r0snBdDZrjDUlWIY@cluster0.qgek25n.mongodb.net/brainly");
 //dont forget to add scripts to pack.json to fasten upm your buil and run work
@@ -22,6 +23,12 @@ const ContentSchema=new Schema({
     userId: {type:Types.ObjectId, ref:'User' ,required:true}
 })
 
+const LinkSchema=new Schema({
+    hash: String,
+    userId:{type:Types.ObjectId, required:true, ref:'User', unique:true}
+})
+
+export const LinkModel= model("Link",LinkSchema);
 export const UserModel= model("User",UserSchema);
 export const ContentModel= model("Content",ContentSchema);
 //this is the new famncy export syntax ie compatible with this new fancy import syntax unlike the old require syntax

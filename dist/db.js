@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ContentModel = exports.UserModel = void 0;
+exports.ContentModel = exports.UserModel = exports.LinkModel = void 0;
 //step 1:
 // schema and models::
 // how my data is gonna look like in the database:
@@ -53,6 +53,11 @@ const ContentSchema = new mongoose_1.Schema({
     tags: [{ type: mongoose_1.Types.ObjectId, ref: 'Tag' }],
     userId: { type: mongoose_1.Types.ObjectId, ref: 'User', required: true }
 });
+const LinkSchema = new mongoose_1.Schema({
+    hash: String,
+    userId: { type: mongoose_1.Types.ObjectId, required: true, ref: 'User', unique: true }
+});
+exports.LinkModel = (0, mongoose_1.model)("Link", LinkSchema);
 exports.UserModel = (0, mongoose_1.model)("User", UserSchema);
 exports.ContentModel = (0, mongoose_1.model)("Content", ContentSchema);
 //this is the new famncy export syntax ie compatible with this new fancy import syntax unlike the old require syntax

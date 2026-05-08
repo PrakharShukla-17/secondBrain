@@ -1,9 +1,10 @@
 import express from "express"
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken"
-import { ContentModel, UserModel } from "./db";
+import { ContentModel, LinkModel, UserModel } from "./db";
 import { JWT_PASSWORD } from "./config";
 import { authMiddleware } from "./middlewares/authMiddleware";
+import { random } from "./utils";
 
 const app=express();
 
@@ -139,12 +140,74 @@ app.delete("/api/v1/content/:id",authMiddleware,async(req,res)=>{
     })
 })
 
-app.post("/api/v1/brain/share",authMiddleware,(req,res)=>{
+app.post("/api/v1/brain/share",authMiddleware,async(req,res)=>{
+        const share=req.body.share;
+        const hash=random(10);
+        if(share){
 
+         const existingLink = await LinkModel.findOne({
+           userId: req.userId,
+         });
+
+         if(existingLink){
+            return res.status(300).json({
+                msg:existingLink.hash
+            })
+         }
+
+            await LinkModel.create({
+                userId:req.userId,
+                hash: hash
+            })
+        }else{
+            await LinkModel.deleteOne({
+                userId:req.userId
+            })
+
+            return res.json({
+                msg:"Link no longer exists"
+            })
+        }
+
+        res.json({
+            msg:"Sharable Link updated succesfully",
+            hash:hash
+        })
 })
 
-app.post("/api/v1/brain/:shareLink",authMiddleware,(req,res)=>{
+app.get("/api/v1/brain/:shareLink",async (req,res)=>{
+        const hash=req.params.shareLink;
 
+        const Link=await LinkModel.findOne({
+            hash:hash
+        })
+
+        if(!Link){
+            return res.status(402).json({
+                msg:"the sharable hash doesnt exist now"
+            })
+        }
+
+
+        const linkContent=await ContentModel.find({
+            userId:Link.userId
+        })
+
+        const user=await UserModel.findOne({
+            _id:Link.userId
+        })
+
+        if(!user){
+            return res.status(412).json({
+                msg:"this ideally shouldnt happen, but it did?"
+            })
+        }
+
+
+        res.status(200).json({
+            username:user.username,
+            content:linkContent
+        })
 })
 
 
